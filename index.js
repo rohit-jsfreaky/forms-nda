@@ -2,13 +2,7 @@ import express from "express";
 import cors from "cors";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv"
-import puppeteer from "puppeteer";
 import fs from "fs-extra";
-import { fileURLToPath } from 'url';
-import path from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 dotenv.config();
 const app = express();
@@ -28,23 +22,6 @@ app.listen(PORT, () => {
 app.get("/", (req, res) => {
   res.end("Hello world");
 });
-
-const generatePDF = async (htmlContent) => {
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
-
-  // Set HTML content
-  await page.setContent(htmlContent, { waitUntil: "networkidle0" });
-
-  // Define PDF file path
-  const pdfPath = path.join(__dirname, "generated.pdf");
-
-  // Generate PDF
-  await page.pdf({ path: pdfPath, format: "A4" });
-
-  await browser.close();
-  return pdfPath;
-};
 
 // Email sending route
 app.post("/send", async (req, res) => {
@@ -303,26 +280,18 @@ By signing, each party confirms understanding, acceptance, and voluntary agreeme
 </html>
     `
 
-    const pdfPath = await generatePDF(htmlContent);
 
     const mailOptions = {
       from: "appforms183@gmail.com", // Sender's email
       to: email, // Recipient's email
       subject: "Nda form submission files", // Email subject
       html: htmlContent,
-      attachments: [
-        {
-          filename: "NDA_Form.pdf",
-          path: pdfPath,
-          contentType: "application/pdf",
-        },
-      ],
     };
 
     const info = await transporter.sendMail(mailOptions);
     console.log("Email sent successfully:", info.response);
 
-    await fs.remove(pdfPath);
+  
     return { success: true, info };
   } catch (error) {
     console.error("Error sending email:", error.message);
